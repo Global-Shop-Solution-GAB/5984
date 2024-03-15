@@ -1,0 +1,887 @@
+Program.Sub.ScreenSU.Start
+Gui.fmMain..Create
+Gui.fmMain..Caption("Update Inventory Price and Safety Stock by Vendor")
+Gui.fmMain..Size(23445,6540)
+Gui.fmMain..MinX(0)
+Gui.fmMain..MinY(0)
+Gui.fmMain..Position(0,0)
+Gui.fmMain..BackColor(-2147483633)
+Gui.fmMain..MousePointer(0)
+Gui.fmMain..Event(UnLoad,fmMain_UnLoad)
+Gui.fmMain.txtVenNo.Create(TextBox,"",True,1215,300,0,840,60,True,0,"Arial",8,-2147483643,1)
+Gui.fmMain.txtVenName.Create(TextBox,"",True,2115,300,0,2100,60,True,0,"Arial",8,-2147483643,1)
+Gui.fmMain.lblVenNo.Create(Label,"Vendor",True,780,255,0,30,150,True,0,"Arial",8,-2147483633,0)
+Gui.fmMain.lblVenNo.FontStyle(True,False,False,False,False)
+Gui.fmMain.cmdVenBrws.Create(Button)
+Gui.fmMain.cmdVenBrws.Size(855,375)
+Gui.fmMain.cmdVenBrws.Position(4260,30)
+Gui.fmMain.cmdVenBrws.Caption("^")
+Gui.fmMain.cmdVenBrws.Event(Click,cmdVenBrws_Click)
+Gui.fmMain.cmdVenBrws.TabStop(True)
+Gui.fmMain.cmdVenBrws.TabIndex(1)
+Gui.fmMain.GsGcMain.Create(GsGridControl)
+Gui.fmMain.GsGcMain.Size(23265,5640)
+Gui.fmMain.GsGcMain.Position(-15,465)
+Gui.fmMain.GsGcMain.Anchor(15)
+Gui.fmMain.GsGcMain.Event(RowCellClick,GsGcMain_RowCellClick)
+Gui.fmMain.GsGcMain.Event(CellValueChanged,GsGcMain_CellValueChanged)
+Gui.fmMain.GsGcMain.TabStop(True)
+Gui.fmMain.GsGcMain.TabIndex(5)
+Gui.fmMain.lblPct.Create(Label,"Default Margin Percent",True,2025,255,0,5265,150,True,0,"Arial",8,-2147483633,0)
+Gui.fmMain.lblPct.FontStyle(True,False,False,False,False)
+Gui.fmMain.txtPct.Create(TextBox,"0",True,975,300,0,7230,60,True,1,"Arial",8,-2147483643,1)
+Gui.fmMain.txtPct.DefaultValue("0")
+Gui.fmMain.txtPct.TabStop(True)
+Gui.fmMain.txtPct.TabIndex(2)
+Gui.fmMain.cmdRfrsh.Create(Button)
+Gui.fmMain.cmdRfrsh.Size(855,375)
+Gui.fmMain.cmdRfrsh.Position(11130,30)
+Gui.fmMain.cmdRfrsh.Caption("REFRESH")
+Gui.fmMain.cmdRfrsh.FontStyle(True,False,False,False,False)
+Gui.fmMain.cmdRfrsh.Event(Click,cmdRfrsh_Click)
+Gui.fmMain.cmdRfrsh.TabStop(True)
+Gui.fmMain.cmdRfrsh.TabIndex(4)
+Gui.fmMain.cmdSel.Create(Button)
+Gui.fmMain.cmdSel.Size(1395,375)
+Gui.fmMain.cmdSel.Position(20340,30)
+Gui.fmMain.cmdSel.Caption("Select All")
+Gui.fmMain.cmdSel.FontStyle(True,False,False,False,False)
+Gui.fmMain.cmdSel.Event(Click,cmdSel_Click)
+Gui.fmMain.cmdSel.Anchor(9)
+Gui.fmMain.cmdSv.Create(Button)
+Gui.fmMain.cmdSv.Size(1395,375)
+Gui.fmMain.cmdSv.Position(21780,30)
+Gui.fmMain.cmdSv.Caption("Save Selected")
+Gui.fmMain.cmdSv.FontStyle(True,False,False,False,False)
+Gui.fmMain.cmdSv.Event(Click,cmdSv_Click)
+Gui.fmMain.cmdSv.Anchor(9)
+Gui.fmMain.lblExch.Create(Label,"Default Exchange Rate",True,1935,255,0,8235,150,True,0,"Arial",8,-2147483633,0)
+Gui.fmMain.lblExch.FontStyle(True,False,False,False,False)
+Gui.fmMain.txtExch.Create(TextBox,"0",True,975,300,0,10125,60,True,1,"Arial",8,-2147483643,1)
+Gui.fmMain.txtExch.TabStop(True)
+Gui.fmMain.txtExch.TabIndex(3)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.bChkAll.Declare(Boolean,False)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+
+F.Intrinsic.UI.SetBrowserHotTypeAhead(True)
+
+F.Intrinsic.Control.CallSub(SetIcon)
+
+Gui.fmMain..Show
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.cmdVenBrws_Click.Start
+F.Intrinsic.Control.Try
+V.Local.sRET.Declare
+
+F.ODBC.Connection!conts.OpenCompanyConnection(180)
+
+F.Intrinsic.UI.Browser("Select a vendor","conts","Select distinct RTRIM(A.NAME_VENDOR) as VENDOR,RTRIM(B.NAME_VENDOR) as VENDOR_NAME from V_INVENTORY_MST2 A left join V_VENDOR_MASTER B on RTRIM(B.VENDOR) = RTRIM(A.NAME_VENDOR) where RTRIM(A.NAME_VENDOR) <> ''","VENDOR*!*VENDOR NAME","1500*!*2000",10000,10000,V.Local.sRET)
+
+F.ODBC.Connection!conts.Close
+
+F.Intrinsic.Control.If(V.Local.sRET.Trim,=,"***CANCEL***")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Split(V.Local.sRET,"*!*",V.Local.sRET)
+
+Gui.fmMain.txtVenNo.Text(V.Local.sRET(0))
+Gui.fmMain.txtVenName.Text(V.Local.sRET(1))
+
+V.Global.bChkAll.Set(False)
+
+Gui.fmMain.cmdSel.Caption("Select All")
+
+'F.Intrinsic.Control.CallSub(Data)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdVenBrws_Click.End
+
+Program.Sub.Data.Start
+F.Intrinsic.Control.Try
+V.Local.sVenNo.Declare
+V.Local.sVenName.Declare
+V.Local.sSQL.Declare
+V.Local.sExDt.Declare
+V.Local.sSEQ.Declare
+V.Local.iCNT.Declare
+V.Local.iCNT2.Declare
+V.Local.fPrice.Declare
+V.Local.fPCT.Declare
+V.Local.sQteDt.Declare
+V.Local.sYear.Declare
+V.Local.sMonth.Declare
+V.Local.sDay.Declare
+V.Local.sCurr.Declare
+V.Local.bPctChk.Declare
+V.Local.bExchChk.Declare
+
+V.Local.sVenNo.Set(V.Screen.fmMain!txtVenNo.Text.Trim)
+V.Local.sVenName.Set(V.Screen.fmMain!txtVenName.Text.Trim)
+
+F.Intrinsic.Control.If(V.DataTable.dtPrimary.Exists)
+	F.Data.DataTable.Close("dtPrimary")
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.UI.InvokeWaitDialog("Gathering data...","Please wait")
+F.Intrinsic.UI.SetWaitDialogAlwaysOnTop(True)
+
+F.ODBC.Connection!conts.OpenCompanyConnection
+'BM Changing QTY_REORDER to QTY_ORDER as per customer request 2/9/21
+'F.Intrinsic.String.Build("Select Distinct RTRIM(A.PART) as PART,RTRIM(A.LOCATION) as LOC,RTRIM(A.DESCRIPTION) as DESCRIPTION,RTRIM(A.PRODUCT_LINE) as PRODUCT_LINE,RTRIM(A.CODE_SORT) as CODE_SORT,A.AMT_PRICE,A.QTY_REORDER,RTRIM(B.NAME_VENDOR) as VENDOR,' ' as VENDOR_NAME,CAST(0.00000 as Float) as EXCH_RATE,' ' as DATE_QTE,CAST(0.00000 as Float) as VEND_PRICE,A.QTY_SAFETY,A.FACTOR_CONVERSION from INVENTORY_MSTR A left join V_INVENTORY_MST2 B on RTRIM(B.PART) = RTRIM(A.PART) and RTRIM(B.LOCATION) = RTRIM(A.LOCATION) where RTRIM(B.NAME_VENDOR) = '{0}'",V.Local.sVenNo.Trim,V.Local.sSQL)
+F.Intrinsic.String.Build("Select Distinct RTRIM(A.PART) as PART,RTRIM(A.LOCATION) as LOC,RTRIM(A.DESCRIPTION) as DESCRIPTION,RTRIM(A.PRODUCT_LINE) as PRODUCT_LINE,RTRIM(A.CODE_SORT) as CODE_SORT,A.AMT_PRICE,A.QTY_ORDER,RTRIM(B.NAME_VENDOR) as VENDOR,' ' as VENDOR_NAME,CAST(0.00000 as Float) as EXCH_RATE,' ' as DATE_QTE,CAST(0.00000 as Float) as VEND_PRICE,A.QTY_SAFETY,A.FACTOR_CONVERSION from INVENTORY_MSTR A left join V_INVENTORY_MST2 B on RTRIM(B.PART) = RTRIM(A.PART) and RTRIM(B.LOCATION) = RTRIM(A.LOCATION) where RTRIM(B.NAME_VENDOR) = '{0}'",V.Local.sVenNo.Trim,V.Local.sSQL)
+'FILL WITH DICTIONARIES
+F.Data.DataTable.CreateFromSQL("dtPrimary","conts",V.Local.sSQL,True)
+
+F.Data.Dictionary.CreateFromSQL("dictVenName","conts","Select VENDOR,NAME_VENDOR from V_VENDOR_MASTER")
+F.Data.Dictionary.SetDefaultReturn("dictVenName","")
+
+F.Data.DataTable.FillFromDictionary("dtPrimary","dictVenName","VENDOR","VENDOR_NAME")
+F.Data.Dictionary.Close("dictVenName")
+
+F.Data.DataTable.AddColumn("dtPrimary","CURRENCY","String")
+
+F.Intrinsic.String.Build("Select CURRENCY from VENDOR_CURR where VENDOR = '{0}'",V.Local.sVenNo,V.Local.sSQL)
+F.ODBC.Connection!conts.ExecuteAndReturn(V.Local.sSQL,V.Local.sSQL)
+
+F.Data.DataTable.SetValue("dtPrimary",-1,"CURRENCY",V.Local.sSQL.Trim)
+
+F.ODBC.Connection!conts.ExecuteAndReturn("Select TOP 1 DATE_EXCH_RATE from V_EXCHANGE_RATES order by DATE_EXCH_RATE desc;",V.Local.sSQL)
+
+F.Intrinsic.String.Format(V.Local.sSQL,"YYYY-MM-DD",V.Local.sExDt)
+
+F.Intrinsic.String.Build("Select FROM_ISO_CODE,CAST(EXCHANGE_RATE as Float) as EXCHANGE_RATE from V_EXCHANGE_RATES where TO_ISO_CODE = 'CAD' and DATE_EXCH_RATE = '{0}'",V.Local.sExDt,V.Local.sSQL)
+
+F.Data.Dictionary.CreateFromSQL("dictExch","conts",V.Local.sSQL)
+F.Data.Dictionary.SetDefaultReturn("dictExch",0.00000)
+
+F.Data.DataTable.FillFromDictionary("dtPrimary","dictExch","CURRENCY","EXCH_RATE")
+F.Data.Dictionary.Close("dictExch")
+
+F.Intrinsic.Control.For(V.Local.iCNT,0,V.DataTable.dtPrimary.RowCount--,1)
+	F.Intrinsic.String.Build("select TOP 1 SEQ,QUOTE_DATE from VEND_QTE_HEADER where PART = '{0}' and VENDOR = '{1}' order by QUOTE_DATE desc",V.DataTable.dtPrimary(V.Local.iCNT).PART!FieldValTrim,V.DataTable.dtPrimary(V.Local.iCNT).VENDOR!FieldValTrim,V.Local.sSQL)
+	F.ODBC.Connection!conts.ExecuteAndReturn(V.Local.sSQL,V.Local.sSQL)
+	F.Intrinsic.Control.If(V.Local.sSQL.Trim,=,"")
+		V.Local.sQteDt.Set("No Quote")
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Split(V.Local.sSQL,"*!*",V.Local.sSQL)
+		V.Local.sSEQ.Set(V.Local.sSQL(0))
+		V.Local.sQteDt.Set(V.Local.sSQL(1))
+		F.Intrinsic.String.Left(V.Local.sQteDt,4,V.Local.sYear)
+		F.Intrinsic.String.Mid(V.Local.sQteDt,5,2,V.Local.sMonth)
+		F.Intrinsic.String.Right(V.Local.sQteDt,2,V.Local.sDay)
+		F.Intrinsic.String.Build("{0}-{1}-{2}",V.Local.sYear,V.Local.sMonth,V.Local.sDay,V.Local.sQteDt)
+	F.Intrinsic.Control.EndIf
+
+	F.Data.DataTable.SetValue("dtPrimary",V.Local.iCNT,"DATE_QTE",V.Local.sQteDt)
+	
+	'Logic will have to be modified 
+	'Modifying to adhere to customer's needs BM 2/9/21 
+	F.Intrinsic.Control.If(V.DataTable.dtPrimary(V.Local.iCNT).QTY_ORDER!FieldVal,=,0)
+		F.Intrinsic.String.Build("select top 1 UNIT_PRICE from VEND_QTE_LINES where RTRIM(PART) = '{0}' and RTRIM(SEQ) = '{1}' order by QUANTITY asc",V.DataTable.dtPrimary(V.Local.iCNT).PART!FieldValTrim,V.Local.sSEQ,V.DataTable.dtPrimary(V.Local.iCNT).QTY_ORDER!FieldVal,V.Local.sSQL) 
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("select top 1 UNIT_PRICE from VEND_QTE_LINES where RTRIM(PART) = '{0}' and RTRIM(SEQ) = '{1}' and QUANTITY <= '{2}' order by QUANTITY desc",V.DataTable.dtPrimary(V.Local.iCNT).PART!FieldValTrim,V.Local.sSEQ,V.DataTable.dtPrimary(V.Local.iCNT).QTY_ORDER!FieldVal,V.Local.sSQL) 
+	F.Intrinsic.Control.EndIf
+	F.ODBC.Connection!conts.ExecuteAndReturn(V.Local.sSQL,V.Local.fPrice)
+	
+	'F.Intrinsic.Control.If(V.DataTable.dtPrimary(V.Local.iCNT).QTY_REORDER!FieldVal,=,0)
+	'	F.Intrinsic.String.Build("select TOP 1 UNIT_PRICE from VEND_QTE_LINES where RTRIM(PART) = '{0}' and RTRIM(SEQ) = '{1}' order by UNIT_PRICE asc",V.DataTable.dtPrimary(V.Local.iCNT).PART!FieldValTrim,V.Local.sSEQ,V.Local.sSQL)
+	'	F.ODBC.Connection!conts.ExecuteAndReturn(V.Local.sSQL,V.Local.fPrice)
+	'F.Intrinsic.Control.Else
+	'	F.Intrinsic.String.Build("select UNIT_PRICE from VEND_QTE_LINES where RTRIM(PART) = '{0}' and RTRIM(SEQ) = '{1}' and QUANTITY = '{2}'",V.DataTable.dtPrimary(V.Local.iCNT).PART!FieldValTrim,V.Local.sSEQ,V.DataTable.dtPrimary(V.Local.iCNT).QTY_REORDER!FieldVal,V.Local.sSQL)
+	'	F.ODBC.Connection!conts.ExecuteAndReturn(V.Local.sSQL,V.Local.fPrice)
+	'F.Intrinsic.Control.EndIf
+		
+	F.Intrinsic.Control.If(V.Local.fPrice.Trim,=,"")
+		V.Local.fPrice.Set("0.00000")
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.If(V.DataTable.dtPrimary(V.Local.iCNT).FACTOR_CONVERSION!FieldVal,=,0)
+		F.Data.DataTable.SetValue("dtPrimary",V.Local.iCNT,"FACTOR_CONVERSION",1.00000)
+	F.Intrinsic.Control.EndIf
+	
+	F.Data.DataTable.SetValue("dtPrimary",V.Local.iCNT,"VEND_PRICE",V.Local.fPrice)
+F.Intrinsic.Control.Next(V.Local.iCNT)
+
+F.Data.DataTable.AddColumn("dtPrimary","MANUAL_EXCH",Float)
+
+F.Intrinsic.Control.If(V.Screen.fmMain!txtExch.Text.Trim,<>,0,"AND",V.Screen.fmMain!txtExch.Text.Trim,<>,"")
+	V.Local.bExchChk.Set(True)
+	F.Data.DataTable.SetValue("dtPrimary",-1,"MANUAL_EXCH",V.Screen.fmMain!txtExch.Text)
+F.Intrinsic.Control.Else
+	F.Data.DataTable.SetValue("dtPrimary",-1,"MANUAL_EXCH",0)
+F.Intrinsic.Control.EndIf
+
+'BM 2/10/21 Customer pointed out that conversion factor should be divided, not multiplied 
+F.Data.DataTable.AddExpressionColumn("dtPrimary","COMP_COST_BASE","FLOAT","(VEND_PRICE*EXCH_RATE)/FACTOR_CONVERSION")
+F.Data.DataTable.AddColumn("dtPrimary","BASE_COST",Float)
+F.Data.DataTable.SetValueFormat("dtPrimary",-1,"COMP_COST_BASE","BASE_COST","")
+
+F.Data.DataTable.AddExpressionColumn("dtPrimary","COMP_COST","FLOAT","(VEND_PRICE*MANUAL_EXCH)/FACTOR_CONVERSION")
+F.Data.DataTable.AddColumn("dtPrimary","OVRD_COST",Float)
+F.Data.DataTable.SetValueFormat("dtPrimary",-1,"COMP_COST","OVRD_COST","")
+
+F.Intrinsic.Control.If(V.Screen.fmMain!txtPct.Text.Trim,=,0,"AND",V.Screen.fmMain!txtPct.Text.Trim,=,"")
+	V.Local.bPctChk.Set(True)
+	V.Local.fPCT.Set(0)
+F.Intrinsic.Control.Else
+	V.Local.fPCT.Set(V.Screen.fmMain!txtPct.Text)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Math.Div(V.Local.fPCT,100,V.Local.fPCT)
+
+F.Data.DataTable.AddColumn("dtPrimary","MARKUP_PCT","Float",V.Local.fPCT)
+
+F.Data.DataTable.AddExpressionColumn("dtPrimary","AUTO_LIST_PRICE","Float","COMP_COST_BASE*1")
+F.Data.DataTable.AddColumn("dtPrimary","AUTO_PRICE_VIEW",Float)
+F.Data.DataTable.SetValueFormat("dtPrimary",-1,"AUTO_LIST_PRICE","AUTO_PRICE_VIEW","")
+
+F.Data.DataTable.AddExpressionColumn("dtPrimary","OVRD_LIST_PRICE","Float","COMP_COST/(1-MARKUP_PCT)")
+F.Data.DataTable.AddColumn("dtPrimary","OVRD_PRICE_VIEW",Float)
+F.Data.DataTable.SetValueFormat("dtPrimary",-1,"OVRD_LIST_PRICE","OVRD_PRICE_VIEW","")
+
+F.Data.DataTable.AddColumn("dtPrimary","APPLY_CHGS","Boolean",False)
+
+F.ODBC.Connection!conts.Close
+
+F.Intrinsic.UI.ChangeWaitStatus("Generating screen...",-1)
+
+F.Intrinsic.Control.CallSub(Grid)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.Data.End
+
+Program.Sub.Grid.Start
+F.Intrinsic.Control.Try
+V.Local.sCaption.Declare
+
+Gui.fmMain.GsGcMain.Visible(False)
+
+Gui.fmMain.GsGcMain.SuspendLayout
+
+Gui.fmMain.GsGcMain.AddGridviewFromDatatable("gvPrimary","dtPrimary")
+Gui.fmMain.GsGcMain.MainView("gvPrimary")
+
+Gui.fmMain.GsGcMain.SetGridviewProperty("gvPrimary","ColumnPanelRowHeight",50)
+Gui.fmMain.GsGcMain.SetGridviewProperty("gvPrimary","Enableappearanceevenrow",True)
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","Visible",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","Visible",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","Visible",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_LIST_PRICE","Visible",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_LIST_PRICE","Visible",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","COMP_COST_BASE","Visible",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","COMP_COST","Visible",False)
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PART","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","LOC","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DESCRIPTION","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","ReadOnly",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","ReadOnly",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","ReadOnly",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","ReadOnly",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","ReadOnly",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","APPLY_CHGS","ReadOnly",True)
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PART","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","LOC","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DESCRIPTION","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","AllowEdit",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","APPLY_CHGS","AllowEdit",False)
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","ReadOnly",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","AllowEdit",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","ReadOnly",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","AllowEdit",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","ReadOnly",False)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","AllowEdit",True)
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PART","Caption","Part")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","LOC","Caption","Loc")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DESCRIPTION","Caption","Description")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","Caption","PL")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","Caption","Sort Code")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","Caption","Current Price")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","Caption","Order Qty")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","Caption","Vendor Name")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","Caption","Vendor No")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","Caption","Vendor Currency")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","Caption","Exchange Rate")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","Caption","Quote Date")
+F.Intrinsic.String.Build("Vendor Price{0}({1})",V.Ambient.NewLine,V.DataTable.dtPrimary(0).CURRENCY!FieldValTrim,V.Local.sCaption)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","Caption",V.Local.sCaption)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","Caption","Sell$ Update YY.MM")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","Caption","CF")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","Caption","Manual Exch Rate")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","Caption","CDN RT COST")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","Caption","CDN OVRD COST")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","Caption","Margin %")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","Caption","Default Price")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","Caption","Override Price")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","APPLY_CHGS","Caption","Apply Changes?")
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PART","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","LOC","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DESCRIPTION","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","HeaderBackColor",V.Color.LtGrey)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","APPLY_CHGS","HeaderBackColor",V.Color.LtGrey)
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PART","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","LOC","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DESCRIPTION","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","HeaderFontBold",True)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","APPLY_CHGS","HeaderFontBold",True)
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PART","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","LOC","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DESCRIPTION","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","HeaderHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","APPLY_CHGS","HeaderHAlignment","Center")
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PART","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","LOC","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DESCRIPTION","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","HeaderWordWrap","Wrap")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","APPLY_CHGS","HeaderWordWrap","Wrap")
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","CellHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","CellHAlignment","Center")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","CellHAlignment","Center")
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PART","Width",50)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","LOC","Width",30)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DESCRIPTION","Width",75)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","PRODUCT_LINE","Width",20)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","Width",25)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","Width",30)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","Width",50)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR_NAME","Width",60)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VENDOR","Width",30)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CURRENCY","Width",40)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","Width",40)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","Width",40)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","Width",40)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","Width",30)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","FACTOR_CONVERSION","Width",25)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","Width",40)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","Width",40)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","Width",40)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","Width",30)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","Width",50)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","Width",50)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","APPLY_CHGS","Width",30)
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AMT_PRICE","DisplayCustomNumeric","###,###.####")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_ORDER","DisplayCustomNumeric","###,###.##")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","EXCH_RATE","DisplayCustomNumeric","###,###.####")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","VEND_PRICE","DisplayCustomNumeric","###,###.####")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","DisplayCustomNumeric","###,###.##")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_COST","DisplayCustomNumeric","###,###.####")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","BASE_COST","DisplayCustomNumeric","###,###.####")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","AUTO_PRICE_VIEW","DisplayCustomNumeric","###,###.####")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","OVRD_PRICE_VIEW","DisplayCustomNumeric","###,###.####")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","DisplayCustomNumeric","###%")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","DATE_QTE","DisplayCustomDateTime","d")
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MARKUP_PCT","CellBackColor","LightYellow")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","CellBackColor","LightYellow")
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","MANUAL_EXCH","CellBackColor","LightYellow")
+
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","CODE_SORT","VisibleIndex",12)
+Gui.fmMain.GsGcMain.SetColumnProperty("gvPrimary","QTY_SAFETY","VisibleIndex",14)
+
+F.Intrinsic.UI.CloseWaitDialog
+
+Gui.fmMain.GsGcMain.ResumeLayout
+Gui.fmMain.GsGcMain.Visible(True)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.Grid.End
+
+Program.Sub.GsGcMain_RowCellClick.Start
+F.Intrinsic.Control.Try
+
+F.Intrinsic.Control.SelectCase(V.Args.COLUMN)
+	F.Intrinsic.Control.Case(APPLY_CHGS)
+		F.Intrinsic.Control.If(V.Args.CELLVALUE,=,False)
+			F.Data.DataTable.SetValue("dtPrimary",V.Args.ROWINDEX,"APPLY_CHGS",True)
+		F.Intrinsic.Control.Else
+			F.Data.DataTable.SetValue("dtPrimary",V.Args.ROWINDEX,"APPLY_CHGS",False)
+		F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndSelect
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.GsGcMain_RowCellClick.End
+
+Program.Sub.GsGcMain_CellValueChanged.Start
+F.Intrinsic.Control.Try
+V.Local.fVendPrice.Declare
+V.Local.fManExchRt.Declare
+V.Local.fDfltExchRt.Declare
+V.Local.fMarkup.Declare
+V.Local.iFactorConv.Declare
+V.Local.fCompCost.Declare
+V.Local.fNewPrice.Declare
+
+Gui.fmMain.GsGcMain.GetCellValueByColumnName("gvPrimary","MANUAL_EXCH",V.Args.ROWINDEX,V.Local.fManExchRt)
+Gui.fmMain.GsGcMain.GetCellValueByColumnName("gvPrimary","EXCH_RATE",V.Args.ROWINDEX,V.Local.fDfltExchRt)
+Gui.fmMain.GsGcMain.GetCellValueByColumnName("gvPrimary","VEND_PRICE",V.Args.ROWINDEX,V.Local.fVendPrice)
+Gui.fmMain.GsGcMain.GetCellValueByColumnName("gvPrimary","MARKUP_PCT",V.Args.ROWINDEX,V.Local.fMarkup)
+Gui.fmMain.GsGcMain.GetCellValueByColumnName("gvPrimary","FACTOR_CONVERSION",V.Args.ROWINDEX,V.Local.iFactorConv)
+
+F.Intrinsic.Control.If(V.Local.fVendPrice,=,0)
+	V.Local.fVendPrice.Set(1)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Local.fMarkup,=,0)
+	V.Local.fMarkup.Set(1)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Local.iFactorConv,=,0)
+	V.Local.iFactorConv.Set(1)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.SelectCase(V.Args.COLUMN)
+	F.Intrinsic.Control.Case("QTY_SAFETY")
+		F.Data.DataTable.SetValue("dtPrimary",V.Args.ROWINDEX,"APPLY_CHGS",True)
+	F.Intrinsic.Control.CaseAny("MANUAL_EXCH","MARKUP_PCT")
+		F.Intrinsic.Control.If(V.Local.fManExchRt,=,0)
+			F.Intrinsic.Math.Mult(V.Local.fVendPrice,V.Local.fDfltExchRt,V.Local.fCompCost)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Math.Mult(V.Local.fVendPrice,V.Local.fManExchRt,V.Local.fCompCost)
+		F.Intrinsic.Control.EndIf
+		
+		F.Data.DataTable.SetValue("dtPrimary",V.Args.ROWINDEX,"OVRD_COST",V.Local.fCompCost)
+		'BM 2/10/21 Customer pointed out that the conversion factor should be divided, not multiplied
+		F.Intrinsic.Math.Div(V.Local.fCompCost,V.Local.iFactorConv,V.Local.fCompCost)
+		F.Intrinsic.Control.If(V.Local.fMarkup,<>,1)
+			F.Intrinsic.Math.Sub(1,V.Local.fMarkup,V.Local.fMarkup)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Math.Div(V.Local.fCompCost,V.Local.fMarkup,V.Local.fNewPrice)
+		F.Data.DataTable.SetValue("dtPrimary",V.Args.ROWINDEX,"OVRD_PRICE_VIEW",V.Local.fNewPrice)
+		F.Data.DataTable.SetValue("dtPrimary",V.Args.ROWINDEX,"APPLY_CHGS",True)
+F.Intrinsic.Control.EndSelect
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.GsGcMain_CellValueChanged.End
+
+Program.Sub.cmdSel_Click.Start
+F.Intrinsic.Control.Try
+V.Local.sButton.Declare
+V.Local.sFilter.Declare
+
+F.Intrinsic.Control.If(V.Screen.fmMain!txtVenNo.Text,=,"")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+Gui.fmMain.GsGcMain.GetGridviewProperty("gvPrimary","ActiveFilterString",V.Local.sFilter)
+F.Intrinsic.Control.CallSub(GridViewFilterToDataViewFilter,"Filter",V.Local.sFilter)
+
+F.Data.DataView.Create("dtPrimary","dvPrimary",22,V.Args.Filter,"")
+
+F.Intrinsic.Control.If(V.Global.bChkAll,=,False)
+	F.Data.DataView.SetValue("dtPrimary","dvPrimary",-1,"APPLY_CHGS",True)
+	'F.Data.DataTable.SetValue("dtPrimary",-1,"APPLY_CHGS",True)
+	V.Global.bChkAll.Set(True)
+	V.Local.sButton.Set("Deselect All")
+F.Intrinsic.Control.Else
+	'F.Data.DataView.SetValue("dtPrimary","dvPrimary",-1,"APPLY_CHGS",True)
+	F.Data.DataTable.SetValue("dtPrimary",-1,"APPLY_CHGS",False)
+	V.Global.bChkAll.Set(False)
+	V.Local.sButton.Set("Select All")
+F.Intrinsic.Control.EndIf
+
+Gui.fmMain.cmdSel.Caption(V.local.sButton)
+
+F.Data.DataView.Close("dtPrimary","dvPrimary")
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdSel_Click.End
+
+Program.Sub.cmdSv_Click.Start
+F.Intrinsic.Control.Try
+V.Local.iCNT.Declare
+V.Local.fQtySafety.Declare
+V.Local.fAutoPrice.Declare
+V.Local.fOvrdPrice.Declare
+V.Local.sPart.Declare
+V.Local.sLoc.Declare
+V.Local.sSQL.Declare
+
+F.Data.DataView.Create("dtPrimary","dvFilter",22,"APPLY_CHGS = True","")
+
+F.ODBC.Connection!conts.OpenCompanyConnection
+
+F.Intrinsic.Control.For(V.Local.iCNT,0,V.DataView.dtPrimary!dvFilter.RowCount--,1)
+
+	V.Local.fQtySafety.Set(V.DataView.dtPrimary!dvFilter(V.Local.iCNT).QTY_SAFETY!FieldVal)
+	V.Local.fAutoPrice.Set(V.DataView.dtPrimary!dvFilter(V.Local.iCNT).AUTO_PRICE_VIEW!FieldVal)
+	V.Local.fOvrdPrice.Set(V.DataView.dtPrimary!dvFilter(V.Local.iCNT).OVRD_PRICE_VIEW!FieldVal)
+	V.Local.sPart.Set(V.DataView.dtPrimary!dvFilter(V.Local.iCNT).PART!FieldValTrim)
+	V.Local.sLoc.Set(V.DataView.dtPrimary!dvFilter(V.Local.iCNT).LOC!FieldValTrim)
+	
+	F.Intrinsic.Control.If(V.Local.fOvrdPrice,=,0)
+		F.Intrinsic.String.Build("Update INVENTORY_MSTR set QTY_SAFETY = '{0}',AMT_PRICE = '{1}' where RTRIM(PART) = '{2}' and RTRIM(LOCATION) = '{3}'",V.Local.fQtySafety,V.Local.fAutoPrice,V.Local.sPart.Trim,V.Local.sLoc.Trim,V.Local.sSQL)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("Update INVENTORY_MSTR set QTY_SAFETY = '{0}',AMT_PRICE = '{1}' where RTRIM(PART) = '{2}' and RTRIM(LOCATION) = '{3}'",V.Local.fQtySafety,V.Local.fOvrdPrice,V.Local.sPart.Trim,V.Local.sLoc.Trim,V.Local.sSQL)
+	F.Intrinsic.Control.EndIf
+	
+	F.ODBC.Connection!conts.Execute(V.Local.sSQL)
+
+F.Intrinsic.Control.Next(V.Local.iCNT)
+
+F.Data.DataView.Close("dtPrimary","dvFilter")
+
+F.ODBC.Connection!conts.Close
+
+F.Intrinsic.Control.CallSub(Data)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdSv_Click.End
+
+Program.Sub.cmdRfrsh_Click.Start
+F.Intrinsic.Control.Try
+
+F.Intrinsic.Control.CallSub(Data)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdRfrsh_Click.End
+
+Program.Sub.SetIcon.Start
+F.Intrinsic.Control.Try
+V.Local.sForm.Declare
+V.Local.bExists.Declare
+V.Local.sIcon.Declare
+V.Local.iCounter.Declare
+
+F.Intrinsic.String.Build("{0}\ART\gss2.ico",V.Caller.GlobalDir,v.Local.sIcon)
+F.Intrinsic.File.Exists(V.Local.sIcon, V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists.Not)
+    F.Intrinsic.String.Build("{0}\GAB\GAS\gss2.ico",V.Caller.PluginsDir,v.Local.sIcon)
+    F.Intrinsic.File.Exists(V.Local.sIcon, V.Local.bExists)
+    F.Intrinsic.Control.If(V.Local.bExists.Not)
+        F.Intrinsic.Control.ExitSub
+    F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.UI.GetFormList(V.Local.sForm)
+F.Intrinsic.String.Split(V.Local.sForm, "*!*", V.Local.sForm)
+
+F.Intrinsic.Control.For(V.Local.iCounter, 0, V.Local.sForm.UBound, 1)
+    Gui.[V.Local.sForm(V.Local.iCounter)]..Icon(V.Local.sIcon)
+F.Intrinsic.Control.Next(V.Local.iCounter)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.SetIcon.End
+
+Program.Sub.GridViewFilterToDataViewFilter.Start
+F.Intrinsic.Control.Try
+'Thanks Trey!
+'this sub is for converting the active filter string of a gridview into a dataview friendly version
+'FILTER	-	The Active Filter String
+'will return FILTER
+
+'valid operators: =, >, <, >=, <=, <>, in, is null, not, like
+
+V.Local.sFilter.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.iCounter.Declare(Long)
+V.Local.sFields.Declare(String)
+V.Local.sTemp.Declare(String)
+V.Local.sTemp2.Declare(String)
+V.Local.sFindString.Declare(String)
+V.Local.sReplaceString.Declare(String)
+V.Local.sValues.Declare(String)
+V.Local.sValueReturn.Declare(String)
+V.Local.sFieldReturn.Declare(String)
+V.Local.sValueRegEx.Declare(String, "\'[^']*\'")
+V.Local.sFieldRegEx.Declare(String, "\[[A-Za-z0-9_-]+\]")
+V.Local.sNumberRegEx.Declare(String, "-?[0-9]+(\.[0-9]+)?")
+V.Local.sRegEx.Declare(String)
+V.Local.sMatch.Declare(String)
+V.Local.ilength.Declare(Long)
+V.Local.sValueReturn2.Declare(String)
+
+V.Local.sFilter.Set(V.Args.Filter)
+
+'fix all IsNullOrEmpty
+F.Intrinsic.String.Build("IsNullOrEmpty\({0}\)", V.Local.sFieldRegEx, V.Local.sRegEx)
+F.Intrinsic.String.RegExMatch(V.Local.sFilter, V.Local.sRegEx, True, V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet.Trim, !=, "")
+	F.Intrinsic.String.Split(V.Local.sRet, "@!@", V.Local.sRet)
+	F.Intrinsic.Control.For(V.Local.iCounter, 0, V.Local.sRet.UBound, 1)
+		
+		'get match
+		F.Intrinsic.String.Split(V.Local.sRet(V.Local.iCounter), "*!*", V.Local.sTemp)
+		V.Local.sMatch.Set(V.Local.sTemp(1))
+		
+		'get the field, only one
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sFieldRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "*!*", V.Local.sTemp)
+		V.Local.sFieldReturn.Set(V.Local.sTemp(1))
+		
+		'Replace
+		F.Intrinsic.String.Build("({0} is Null or {0} = '')", V.Local.sFieldReturn, V.Local.sReplaceString)
+		F.Intrinsic.String.Replace(V.Local.sFilter, V.Local.sMatch, V.Local.sReplaceString, V.Local.sFilter)
+	F.Intrinsic.Control.Next(V.Local.iCounter)
+F.Intrinsic.Control.EndIf
+
+'fix all StartsWith
+F.Intrinsic.String.Build("StartsWith\({0},\s*{1}\)", V.Local.sFieldRegEx, V.Local.sValueRegEx, V.Local.sRegEx)
+F.Intrinsic.String.RegExMatch(V.Local.sFilter, V.Local.sRegEx, True, V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet.Trim, !=, "")
+	F.Intrinsic.String.Split(V.Local.sRet, "@!@", V.Local.sRet)
+	F.Intrinsic.Control.For(V.Local.iCounter, 0, V.Local.sRet.UBound, 1)
+		
+		'get match
+		F.Intrinsic.String.Split(V.Local.sRet(V.Local.iCounter), "*!*", V.Local.sTemp)
+		V.Local.sMatch.Set(V.Local.sTemp(1))
+		
+		'get the field, only one
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sFieldRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "*!*", V.Local.sTemp)
+		V.Local.sFieldReturn.Set(V.Local.sTemp(1))
+		
+		'get the value, only one
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sValueRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "*!*", V.Local.sTemp)
+		V.Local.sValueReturn.Set(V.Local.sTemp(1))
+		F.Intrinsic.String.TrimChar(V.Local.sValueReturn, "'", V.Local.sValueReturn)
+		
+		'Replace
+		F.Intrinsic.String.Build("{0} like '{1}%'", V.Local.sFieldReturn, V.Local.sValueReturn, V.Local.sReplaceString)
+		F.Intrinsic.String.Replace(V.Local.sFilter, V.Local.sMatch, V.Local.sReplaceString, V.Local.sFilter)
+	F.Intrinsic.Control.Next(V.Local.iCounter)
+F.Intrinsic.Control.EndIf
+
+'fix all EndsWith
+F.Intrinsic.String.Build("EndsWith\({0},\s*{1}\)", V.Local.sFieldRegEx, V.Local.sValueRegEx, V.Local.sRegEx)
+F.Intrinsic.String.RegExMatch(V.Local.sFilter, V.Local.sRegEx, True, V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet.Trim, !=, "")
+	F.Intrinsic.String.Split(V.Local.sRet, "@!@", V.Local.sRet)
+	F.Intrinsic.Control.For(V.Local.iCounter, 0, V.Local.sRet.UBound, 1)
+		
+		'get match
+		F.Intrinsic.String.Split(V.Local.sRet(V.Local.iCounter), "*!*", V.Local.sTemp)
+		V.Local.sMatch.Set(V.Local.sTemp(1))
+		
+		'get the field, only one
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sFieldRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "*!*", V.Local.sTemp)
+		V.Local.sFieldReturn.Set(V.Local.sTemp(1))
+		
+		'get the value, only one
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sValueRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "*!*", V.Local.sTemp)
+		V.Local.sValueReturn.Set(V.Local.sTemp(1))
+		F.Intrinsic.String.TrimChar(V.Local.sValueReturn, "'", V.Local.sValueReturn)
+		
+		'Replace
+		F.Intrinsic.String.Build("{0} like '%{1}'", V.Local.sFieldReturn, V.Local.sValueReturn, V.Local.sReplaceString)
+		F.Intrinsic.String.Replace(V.Local.sFilter, V.Local.sMatch, V.Local.sReplaceString, V.Local.sFilter)
+	F.Intrinsic.Control.Next(V.Local.iCounter)
+F.Intrinsic.Control.EndIf
+
+'fix all Contains
+F.Intrinsic.String.Build("Contains\({0},\s*{1}\)", V.Local.sFieldRegEx, V.Local.sValueRegEx, V.Local.sRegEx)
+F.Intrinsic.String.RegExMatch(V.Local.sFilter, V.Local.sRegEx, True, V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet.Trim, !=, "")
+	F.Intrinsic.String.Split(V.Local.sRet, "@!@", V.Local.sRet)
+	F.Intrinsic.Control.For(V.Local.iCounter, 0, V.Local.sRet.UBound, 1)
+		
+		'get match
+		F.Intrinsic.String.Split(V.Local.sRet(V.Local.iCounter), "*!*", V.Local.sTemp)
+		V.Local.sMatch.Set(V.Local.sTemp(1))
+		
+		'get the field, only one
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sFieldRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "*!*", V.Local.sTemp)
+		V.Local.sFieldReturn.Set(V.Local.sTemp(1))
+		
+		'get the value, only one
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sValueRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "*!*", V.Local.sTemp)
+		V.Local.sValueReturn.Set(V.Local.sTemp(1))
+		F.Intrinsic.String.TrimChar(V.Local.sValueReturn, "'", V.Local.sValueReturn)
+		
+		'Replace
+		F.Intrinsic.String.Build("{0} like '%{1}%'", V.Local.sFieldReturn, V.Local.sValueReturn, V.Local.sReplaceString)
+		F.Intrinsic.String.Replace(V.Local.sFilter, V.Local.sMatch, V.Local.sReplaceString, V.Local.sFilter)
+	F.Intrinsic.Control.Next(V.Local.iCounter)
+F.Intrinsic.Control.EndIf
+
+'fix between
+F.Intrinsic.String.Build("{0} Between\({1}m?, {1}m?\)", V.Local.sFieldRegEx, V.Local.sNumberRegEx, V.Local.sRegEx)
+F.Intrinsic.String.RegExMatch(V.Local.sFilter, V.Local.sRegEx, True, V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet.Trim, !=, "")
+	F.Intrinsic.String.Split(V.Local.sRet, "@!@", V.Local.sRet)
+	F.Intrinsic.Control.For(V.Local.iCounter, 0, V.Local.sRet.UBound, 1)
+		
+		'get match
+		F.Intrinsic.String.Split(V.Local.sRet(V.Local.iCounter), "*!*", V.Local.sTemp)
+		V.Local.sMatch.Set(V.Local.sTemp(1))
+		
+		'get the field, only one
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sFieldRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "*!*", V.Local.sTemp)
+		V.Local.sFieldReturn.Set(V.Local.sTemp(1))
+		
+		'get the values, two
+		F.Intrinsic.String.RegExMatch(V.Local.sMatch, V.Local.sNumberRegEx, True, V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp, "@!@", V.Local.sTemp)
+		F.Intrinsic.String.Split(V.Local.sTemp(0), "*!*", V.Local.sTemp2)
+		V.Local.sValueReturn.Set(V.Local.sTemp2(1))
+		F.Intrinsic.String.Split(V.Local.sTemp(1), "*!*", V.Local.sTemp2)
+		V.Local.sValueReturn2.Set(V.Local.sTemp2(1))
+		
+		'Replace
+		F.Intrinsic.String.Build("({0} >= {1} and {0} <= {2})", V.Local.sFieldReturn, V.Local.sValueReturn, V.Local.sValueReturn2, V.Local.sReplaceString)
+		F.Intrinsic.String.Replace(V.Local.sFilter, V.Local.sMatch, V.Local.sReplaceString, V.Local.sFilter)
+	F.Intrinsic.Control.Next(V.Local.iCounter)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.AddRV("FILTER", V.Local.sFilter)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(Error,"SubRoutine",V.Ambient.CurrentSubroutine,"eNumber",V.Ambient.ErrorNumber,"eDescription",V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.GridViewFilterToDataViewFilter.End
+
+Program.Sub.Error.Start
+V.Local.sError.Declare
+V.Local.iRet.Declare
+V.Local.sSep.Declare
+
+F.Intrinsic.String.Build("-------------------------------------------------------------------------------------",,V.Local.sSep)
+F.Intrinsic.String.Build("({5}-{6}){0}{7}{0}Project: {4}{0}{7}{0}Sub: {1}{0}Error: {2}, {3}", V.Ambient.NewLine, V.Args.SubRoutine, V.Args.eNumber, V.Args.eDescription,V.Caller.ScriptFile,V.Ambient.Date, V.Ambient.Time,V.Local.sSep,V.Local.sError)
+F.Intrinsic.UI.Msgbox(V.Local.sError,"Error",V.Local.iRet)
+Program.Sub.Error.End
+
+Program.Sub.fmMain_UnLoad.Start
+F.Intrinsic.Control.End
+Program.Sub.fmMain_UnLoad.End
